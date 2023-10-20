@@ -2,15 +2,26 @@ import 'package:deardiary/controller/diarycontroller.dart';
 import 'package:deardiary/model/diary_entry_model.dart';
 import 'package:deardiary/view/diaryentryview.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
 
-class DiaryLogView extends StatelessWidget {
+class DiaryLogView extends StatefulWidget {
   const DiaryLogView({super.key});
-  void newEntry(BuildContext context) {
-    Navigator.push(
+
+  @override
+  State<DiaryLogView> createState() => _DiaryLogViewState();
+}
+
+class _DiaryLogViewState extends State<DiaryLogView> {
+  int data = 2;
+  Future<void> newEntry(BuildContext context) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => DairyEntryView()),
     );
+    setState(() {
+      data = result as int;
+    });
   }
 
   @override
@@ -39,11 +50,10 @@ class DiaryLogView extends StatelessWidget {
 class DiaryLogList extends StatelessWidget {
   final DiaryController controller = DiaryController();
   DiaryLogList({super.key});
-
   @override
   Widget build(BuildContext context) {
     // Assuming you have a list of diary entries, you can sort them in reverse chronological order.
-    final sortedEntries = getSortedEntries();
+    var sortedEntries = getSortedEntries();
 
     return ListView.builder(
       itemCount: sortedEntries.length,
@@ -88,22 +98,68 @@ class DiaryLogList extends StatelessWidget {
   }
 }
 
-class DiaryLogEntry extends StatelessWidget {
+class DiaryLogEntry extends StatefulWidget {
   final DailyEntry entry;
 
   const DiaryLogEntry({super.key, required this.entry});
 
   @override
+  State<DiaryLogEntry> createState() => _DiaryLogEntryState();
+}
+
+class _DiaryLogEntryState extends State<DiaryLogEntry> {
+  late bool refresh;
+  final DiaryController controller = DiaryController();
+  Future<void> removeEntry(BuildContext context) async {
+    await controller.removeEntry(widget.entry.date);
+    setState(() {
+      refresh = !refresh;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(entry.date.toString()),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(entry.description),
-          Text('Rating: ${entry.rating}'),
-        ],
-      ),
-    );
+    return Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  DateFormat('E MMM, d').format(widget.entry.date),
+                  style: const TextStyle(color: Color(0xFF800020)),
+                ),
+                RatingBar(
+                  itemCount: 5,
+                  initialRating: widget.entry.rating.toDouble(),
+                  ratingWidget: RatingWidget(
+                    full: const Icon(Icons.star, color: Color(0xFF800020)),
+                    empty: const Icon(Icons.star_border, color: Colors.grey),
+                    half: const Icon(Icons.star_half, color: Colors.grey),
+                  ),
+                  onRatingUpdate: (rating) {},
+                  ignoreGestures: true,
+                ),
+                IconButton(
+                    onPressed: () {
+                      removeEntry(context);
+                    },
+                    icon: const Icon(
+                      Icons.delete,
+                      color: Color(0xFF800020),
+                    ))
+              ],
+            ),
+            Text(
+              widget.entry.description,
+              style: const TextStyle(color: Color(0xFF800020)),
+            )
+          ],
+        ));
   }
 }

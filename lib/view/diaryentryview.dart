@@ -85,12 +85,16 @@ class _DairyEntryViewState extends State<DairyEntryView> {
                       date: _selectedDate,
                       rating: _userRating.toInt(),
                       description: _textController.text);
-                  widget.controller.addEntry(entry);
 
-                  // Save the diary entry here using your controller.
-                  // _textController.text contains the diary text.
-                  // _selectedDate contains the selected date.
-                  // _userRating contains the rating.
+                  if (widget.controller.checkEntry(entry)) {
+                    const snackBar = SnackBar(
+                      content: Text('An entry for this date already exists.'),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                  } else {
+                    widget.controller.addEntry(entry);
+                    Navigator.of(context).pop(1);
+                  }
                 },
                 child: const Text('Save Entry'),
               ),

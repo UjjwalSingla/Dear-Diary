@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         textTheme: GoogleFonts.libreBaskervilleTextTheme(),
         useMaterial3: true,
       ),
-      home: const DiaryLogView(),
+      home: DiaryLogView(),
     );
   }
 }

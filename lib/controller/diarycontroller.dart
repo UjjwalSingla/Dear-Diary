@@ -7,7 +7,10 @@ class DiaryController {
   Future<void> addEntry(DailyEntry entry) async {
     // Check if an entry with the same date already exists.
     final DailyEntry existingEntry = _diaryBox.values.firstWhere(
-      (e) => e.date == entry.date,
+      (e) =>
+          e.date.year == entry.date.year &&
+          e.date.month == entry.date.month &&
+          e.date.day == entry.date.day,
       orElse: () => DailyEntry(
           date: DateTime.now(),
           description: "new",
@@ -22,7 +25,22 @@ class DiaryController {
     }
   }
 
-  void removeEntry(DateTime date) {
+  bool checkEntry(DailyEntry entry) {
+    // Check if an entry with the same date already exists.
+    try {
+      _diaryBox.values.firstWhere((e) =>
+              e.date.year == entry.date.year &&
+              e.date.month == entry.date.month &&
+              e.date.day ==
+                  entry.date.day // Return null if no matching entry is found.
+          );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> removeEntry(DateTime date) async {
     final index =
         _diaryBox.values.toList().indexWhere((entry) => entry.date == date);
     if (index != -1) {

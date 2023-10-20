@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Daily Dairy',
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white54,
+        scaffoldBackgroundColor: Colors.white,
         textTheme: GoogleFonts.libreBaskervilleTextTheme(),
         useMaterial3: true,
       ),

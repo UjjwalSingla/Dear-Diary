@@ -1,8 +1,17 @@
+import 'package:deardiary/controller/diarycontroller.dart';
+import 'package:deardiary/model/diary_entry_model.dart';
+import 'package:deardiary/view/diaryentryview.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class DiaryLogView extends StatelessWidget {
   const DiaryLogView({super.key});
-  void newEntry() {}
+  void newEntry(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => DairyEntryView()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,17 +27,18 @@ class DiaryLogView extends StatelessWidget {
             ),
           ),
           IconButton(
-              onPressed: newEntry,
+              onPressed: () => newEntry(context),
               icon: const Icon(Icons.add, color: Colors.white))
         ]),
       ),
-      body: const DiaryLogList(),
+      body: DiaryLogList(),
     );
   }
 }
 
 class DiaryLogList extends StatelessWidget {
-  const DiaryLogList({super.key});
+  final DiaryController controller = DiaryController();
+  DiaryLogList({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -45,12 +55,16 @@ class DiaryLogList extends StatelessWidget {
             entry.date.month != sortedEntries[index - 1].date.month ||
             entry.date.year != sortedEntries[index - 1].date.year) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Text(
-                  '${entry.date.month}/${entry.date.year}',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  DateFormat('MMMM, y').format(entry.date),
+                  style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF800020)),
                 ),
               ),
               DiaryLogEntry(entry: entry),
@@ -64,16 +78,20 @@ class DiaryLogList extends StatelessWidget {
   }
 
   // Replace this with your actual data retrieval method.
-  List<DiaryEntry> getSortedEntries() {
+  List<DailyEntry> getSortedEntries() {
     // Implement how to retrieve and sort your diary entries.
-    return [];
+    var entries = controller.getAllEntries();
+    entries.sort(
+      (a, b) => b.date.compareTo(a.date),
+    );
+    return entries;
   }
 }
 
 class DiaryLogEntry extends StatelessWidget {
-  final DiaryEntry entry;
+  final DailyEntry entry;
 
-  DiaryLogEntry({required this.entry});
+  const DiaryLogEntry({super.key, required this.entry});
 
   @override
   Widget build(BuildContext context) {
@@ -88,16 +106,4 @@ class DiaryLogEntry extends StatelessWidget {
       ),
     );
   }
-}
-
-class DiaryEntry {
-  final DateTime date;
-  final String description;
-  final int rating;
-
-  DiaryEntry({
-    required this.date,
-    required this.description,
-    required this.rating,
-  });
 }

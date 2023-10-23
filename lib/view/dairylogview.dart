@@ -47,12 +47,24 @@ class _DiaryLogViewState extends State<DiaryLogView> {
   }
 }
 
-class DiaryLogList extends StatelessWidget {
-  final DiaryController controller = DiaryController();
+class DiaryLogList extends StatefulWidget {
   DiaryLogList({super.key});
+
+  @override
+  State<DiaryLogList> createState() => _DiaryLogListState();
+}
+
+class _DiaryLogListState extends State<DiaryLogList> {
+  final DiaryController controller = DiaryController();
+
+  void updateState() {
+    setState(() {
+      var sortedEntries = getSortedEntries();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Assuming you have a list of diary entries, you can sort them in reverse chronological order.
     var sortedEntries = getSortedEntries();
 
     return ListView.builder(
@@ -60,7 +72,6 @@ class DiaryLogList extends StatelessWidget {
       itemBuilder: (context, index) {
         final entry = sortedEntries[index];
 
-        // Check if a new month has started.
         if (index == 0 ||
             entry.date.month != sortedEntries[index - 1].date.month ||
             entry.date.year != sortedEntries[index - 1].date.year) {
@@ -77,19 +88,17 @@ class DiaryLogList extends StatelessWidget {
                       color: Color(0xFF800020)),
                 ),
               ),
-              DiaryLogEntry(entry: entry),
+              DiaryLogEntry(updateParent: updateState, entry: entry),
             ],
           );
         } else {
-          return DiaryLogEntry(entry: entry);
+          return DiaryLogEntry(updateParent: updateState, entry: entry);
         }
       },
     );
   }
 
-  // Replace this with your actual data retrieval method.
   List<DailyEntry> getSortedEntries() {
-    // Implement how to retrieve and sort your diary entries.
     var entries = controller.getAllEntries();
     entries.sort(
       (a, b) => b.date.compareTo(a.date),
@@ -100,8 +109,9 @@ class DiaryLogList extends StatelessWidget {
 
 class DiaryLogEntry extends StatefulWidget {
   final DailyEntry entry;
-
-  const DiaryLogEntry({super.key, required this.entry});
+  final VoidCallback updateParent;
+  const DiaryLogEntry(
+      {super.key, required this.entry, required this.updateParent});
 
   @override
   State<DiaryLogEntry> createState() => _DiaryLogEntryState();
@@ -117,49 +127,78 @@ class _DiaryLogEntryState extends State<DiaryLogEntry> {
     });
   }
 
+  Future<void> EntryLog() async {
+    final result = await Navigator.push(
+        context, MaterialPageRoute(builder: (context) => DairyEntryView()));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  DateFormat('E MMM, d').format(widget.entry.date),
-                  style: const TextStyle(color: Color(0xFF800020)),
-                ),
-                RatingBar(
-                  itemCount: 5,
-                  initialRating: widget.entry.rating.toDouble(),
-                  ratingWidget: RatingWidget(
-                    full: const Icon(Icons.star, color: Color(0xFF800020)),
-                    empty: const Icon(Icons.star_border, color: Colors.grey),
-                    half: const Icon(Icons.star_half, color: Colors.grey),
-                  ),
-                  onRatingUpdate: (rating) {},
-                  ignoreGestures: true,
-                ),
-                IconButton(
-                    onPressed: () {
-                      removeEntry(context);
-                    },
-                    icon: const Icon(
-                      Icons.delete,
-                      color: Color(0xFF800020),
-                    ))
-              ],
-            ),
-            Text(
-              widget.entry.description,
-              style: const TextStyle(color: Color(0xFF800020)),
-            )
-          ],
-        ));
+    return GestureDetector(
+        onTap: () {
+          print('Container tapped');
+        },
+        child: Container(
+            margin: const EdgeInsets.all(16.0),
+            child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Text(
+                                  DateFormat('E MMM, d')
+                                      .format(widget.entry.date),
+                                  style: const TextStyle(
+                                    color: Color(0xFF800020),
+                                    fontSize: 20,
+                                  ),
+                                )),
+                            RatingBar(
+                              itemCount: 5,
+                              initialRating: widget.entry.rating.toDouble(),
+                              ratingWidget: RatingWidget(
+                                full: const Icon(Icons.star,
+                                    color: Color(0xFF800020)),
+                                empty: const Icon(Icons.star_border,
+                                    color: Colors.grey),
+                                half: const Icon(Icons.star_half,
+                                    color: Colors.grey),
+                              ),
+                              onRatingUpdate: (rating) {},
+                              ignoreGestures: true,
+                            ),
+                            IconButton(
+                                onPressed: () {
+                                  removeEntry(context);
+                                  widget.updateParent();
+                                },
+                                icon: const Icon(
+                                  Icons.delete,
+                                  size: 30,
+                                  color: Color(0xFF800020),
+                                ))
+                          ],
+                        ),
+                        Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Text(
+                              widget.entry.description,
+                              style: const TextStyle(
+                                color: Color(0xFF800020),
+                                fontSize: 20,
+                              ),
+                            ))
+                      ],
+                    )))));
   }
 }

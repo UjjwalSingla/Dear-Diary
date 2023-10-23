@@ -5,20 +5,16 @@ class DiaryController {
   final Box<DailyEntry> _diaryBox = Hive.box<DailyEntry>('DailyEntry');
 
   Future<void> addEntry(DailyEntry entry) async {
-    // Check if an entry with the same date already exists.
     final DailyEntry existingEntry = _diaryBox.values.firstWhere(
       (e) =>
           e.date.year == entry.date.year &&
           e.date.month == entry.date.month &&
           e.date.day == entry.date.day,
-      orElse: () => DailyEntry(
-          date: DateTime.now(),
-          description: "new",
-          rating: 2), // Return null if no matching entry is found.
+      orElse: () =>
+          DailyEntry(date: DateTime.now(), description: "new", rating: 2),
     );
 
     if (existingEntry.description != "new") {
-      // An entry with the same date already exists.
       throw Exception('An entry for this date already exists.');
     } else {
       await _diaryBox.add(entry);
@@ -26,14 +22,11 @@ class DiaryController {
   }
 
   bool checkEntry(DailyEntry entry) {
-    // Check if an entry with the same date already exists.
     try {
       _diaryBox.values.firstWhere((e) =>
-              e.date.year == entry.date.year &&
-              e.date.month == entry.date.month &&
-              e.date.day ==
-                  entry.date.day // Return null if no matching entry is found.
-          );
+          e.date.year == entry.date.year &&
+          e.date.month == entry.date.month &&
+          e.date.day == entry.date.day);
       return true;
     } catch (e) {
       return false;

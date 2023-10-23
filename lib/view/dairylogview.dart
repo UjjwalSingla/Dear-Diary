@@ -1,6 +1,7 @@
 import 'package:deardiary/controller/diarycontroller.dart';
 import 'package:deardiary/model/diary_entry_model.dart';
 import 'package:deardiary/view/diaryentryview.dart';
+import 'package:deardiary/view/monthlyratingview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +31,15 @@ class _DiaryLogViewState extends State<DiaryLogView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF800020),
         title: Row(children: [
+          ElevatedButton(
+              onPressed: () => {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => MonthlyAveragesView()),
+                    )
+                  },
+              child: const Text("Monthly Average Ranking")),
           const Expanded(
             child: Text(
               'Diary Enteries',

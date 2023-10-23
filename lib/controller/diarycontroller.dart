@@ -44,4 +44,27 @@ class DiaryController {
   List<DailyEntry> getAllEntries() {
     return _diaryBox.values.toList();
   }
+
+  Map<String, double> calculateMonthlyAverages() {
+    final List<DailyEntry> entries = _diaryBox.values.toList();
+    final Map<String, List<double>> monthlyRatings = {};
+
+    for (final entry in entries) {
+      final key = '${entry.date.year}-${entry.date.month}';
+      if (monthlyRatings.containsKey(key)) {
+        monthlyRatings[key]!.add(entry.rating.toDouble());
+      } else {
+        monthlyRatings[key] = [entry.rating.toDouble()];
+      }
+    }
+
+    final Map<String, double> monthlyAverages = {};
+    monthlyRatings.forEach((key, ratings) {
+      final totalRating = ratings.reduce((a, b) => a + b);
+      final averageRating = totalRating / ratings.length;
+      monthlyAverages[key] = averageRating;
+    });
+
+    return monthlyAverages;
+  }
 }

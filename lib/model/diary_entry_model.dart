@@ -1,21 +1,24 @@
-import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-part 'diary_entry_model.g.dart';
+class DiaryEntry {
+  DateTime date;
+  String description;
+  int rating;
 
-@HiveType(typeId: 0)
-class DailyEntry extends HiveObject {
-  @HiveField(0)
-  late DateTime date;
+  DiaryEntry(
+      {required this.date, required this.description, required this.rating});
 
-  @HiveField(1)
-  late String description;
+  // Convert a DiaryEntry to Map
+  Map<String, dynamic> toMap() {
+    return {'date': date, 'description': description, 'rating': rating};
+  }
 
-  @HiveField(2)
-  late int rating;
-
-  DailyEntry({
-    required this.date,
-    required this.description,
-    required this.rating,
-  });
+  // Convert a Map to DiaryEntry
+  factory DiaryEntry.fromMap(Map<String, dynamic> map) {
+    return DiaryEntry(
+      date: map['date'].toDate(),
+      description: map['description'],
+      rating: map['rating'],
+    );
+  }
 }

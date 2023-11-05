@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "878176063962",
+    "project_id": "deardiary2-31023",
+    "storage_bucket": "deardiary2-31023.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878176063962:android:8a039302716bf3786e30e3",
+        "android_client_info": {
+          "package_name": "com.example.deardiary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzqSg5j79yVAYjk0ppSZrBvvJV_jNueBk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

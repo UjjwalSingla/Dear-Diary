@@ -1,4 +1,4 @@
-import 'package:deardiary/controller/diarycontroller.dart';
+import 'package:deardiary/controller/diary_entry_service.dart.dart';
 import 'package:deardiary/model/diary_entry_model.dart';
 import 'package:file/local.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +21,7 @@ class _DairyEntryViewState extends State<DairyEntryView> {
   DateTime _selectedDate = DateTime.now();
   double _userRating = 0.0;
 
-  Future<void> generateDiaryEntriesPDF(DailyEntry entry) async {
+  Future<void> generateDiaryEntriesPDF(DiaryEntry entry) async {
     final pdf = pw.Document();
     pdf.addPage(
       pw.Page(
@@ -112,20 +112,20 @@ class _DairyEntryViewState extends State<DairyEntryView> {
                       MaterialStateProperty.all(const Color(0xFF800020)),
                 ),
                 onPressed: () {
-                  DailyEntry entry = DailyEntry(
+                  DiaryEntry entry = DiaryEntry(
                       date: _selectedDate,
                       rating: _userRating.toInt(),
                       description: _textController.text);
 
-                  if (widget.controller.checkEntry(entry)) {
-                    const snackBar = SnackBar(
-                      content: Text('An entry for this date already exists.'),
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                  } else {
-                    widget.controller.addEntry(entry);
-                    Navigator.of(context).pop(1);
-                  }
+                  // if (widget.controller.checkEntry(entry)) {
+                  //   const snackBar = SnackBar(
+                  //     content: Text('An entry for this date already exists.'),
+                  //   );
+                  //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                  // } else {
+                  widget.controller.addEntry(entry);
+                  Navigator.of(context).pop(1);
+                  // }
                 },
                 child: const Text(
                   'Save Entry',
@@ -139,7 +139,7 @@ class _DairyEntryViewState extends State<DairyEntryView> {
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  DailyEntry entry = DailyEntry(
+                  DiaryEntry entry = DiaryEntry(
                       date: _selectedDate,
                       rating: _userRating.toInt(),
                       description: _textController.text);

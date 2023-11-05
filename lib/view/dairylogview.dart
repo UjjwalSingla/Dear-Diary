@@ -1,5 +1,5 @@
-import 'package:deardiary/controller/diarycontroller.dart';
 import 'package:deardiary/model/diary_entry_model.dart';
+import 'package:deardiary/controller/diary_entry_service.dart.dart';
 import 'package:deardiary/view/diaryentryview.dart';
 import 'package:deardiary/view/monthlyratingview.dart';
 import 'package:flutter/material.dart';
@@ -31,15 +31,15 @@ class _DiaryLogViewState extends State<DiaryLogView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF800020),
         title: Row(children: [
-          ElevatedButton(
-              onPressed: () => {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => MonthlyAveragesView()),
-                    )
-                  },
-              child: const Text("Monthly Average Ranking")),
+          // ElevatedButton(
+          //     onPressed: () => {
+          //           Navigator.push(
+          //             context,
+          //             MaterialPageRoute(
+          //                 builder: (context) => MonthlyAveragesView()),
+          //           )
+          //         },
+          //     child: const Text("Monthly Average Ranking")),
           const Expanded(
             child: Text(
               'Diary Enteries',
@@ -67,9 +67,9 @@ class DiaryLogList extends StatefulWidget {
 class _DiaryLogListState extends State<DiaryLogList> {
   final DiaryController controller = DiaryController();
 
-  void updateState() {
-    setState(() {
-      var sortedEntries = getSortedEntries();
+  Future<void> updateState() async {
+    setState(() async {
+      var sortedEntries = await getSortedEntries();
     });
   }
 
@@ -108,8 +108,8 @@ class _DiaryLogListState extends State<DiaryLogList> {
     );
   }
 
-  List<DailyEntry> getSortedEntries() {
-    var entries = controller.getAllEntries();
+  Future<List<DiaryEntry>> getSortedEntries() async {
+    List<DiaryEntry> entries = await controller.getAllEntries();
     entries.sort(
       (a, b) => b.date.compareTo(a.date),
     );
@@ -118,7 +118,7 @@ class _DiaryLogListState extends State<DiaryLogList> {
 }
 
 class DiaryLogEntry extends StatefulWidget {
-  final DailyEntry entry;
+  final DiaryEntry entry;
   final VoidCallback updateParent;
   const DiaryLogEntry(
       {super.key, required this.entry, required this.updateParent});
@@ -131,7 +131,7 @@ class _DiaryLogEntryState extends State<DiaryLogEntry> {
   late bool refresh;
   final DiaryController controller = DiaryController();
   Future<void> removeEntry(BuildContext context) async {
-    await controller.removeEntry(widget.entry.date);
+    await controller.removeEntry(widget.entry.date.toString());
     setState(() {
       refresh = !refresh;
     });

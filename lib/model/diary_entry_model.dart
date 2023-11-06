@@ -1,12 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DiaryEntry {
+  final String? id;
   DateTime date;
   String description;
   int rating;
 
   DiaryEntry(
-      {required this.date, required this.description, required this.rating});
+      {this.id,
+      required this.date,
+      required this.description,
+      required this.rating});
 
   // Convert a DiaryEntry to Map
   Map<String, dynamic> toMap() {
@@ -14,8 +18,10 @@ class DiaryEntry {
   }
 
   // Convert a Map to DiaryEntry
-  factory DiaryEntry.fromMap(Map<String, dynamic> map) {
+  static DiaryEntry fromMap(DocumentSnapshot doc) {
+    Map<String, dynamic> map = doc.data() as Map<String, dynamic>;
     return DiaryEntry(
+      id: doc.id,
       date: map['date'].toDate(),
       description: map['description'],
       rating: map['rating'],

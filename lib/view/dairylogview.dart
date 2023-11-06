@@ -1,13 +1,14 @@
-import 'package:deardiary/model/diary_entry_model.dart';
 import 'package:deardiary/controller/diary_entry_service.dart.dart';
-import 'package:deardiary/view/diaryentryview.dart';
+import 'package:deardiary/model/diary_entry_model.dart';
 import 'package:deardiary/view/monthlyratingview.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:deardiary/view/diaryentryview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
 
 class DiaryLogView extends StatefulWidget {
-  const DiaryLogView({super.key});
+  DiaryLogView({super.key});
 
   @override
   State<DiaryLogView> createState() => _DiaryLogViewState();
@@ -20,6 +21,12 @@ class _DiaryLogViewState extends State<DiaryLogView> {
       context,
       MaterialPageRoute(builder: (context) => DairyEntryView()),
     );
+    const snackBar = SnackBar(
+      backgroundColor: Colors.indigo,
+      content: Text("Successfully Created"),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
     setState(() {
       data = result as int;
     });
@@ -28,32 +35,38 @@ class _DiaryLogViewState extends State<DiaryLogView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF800020),
-        title: Row(children: [
-          // ElevatedButton(
-          //     onPressed: () => {
-          //           Navigator.push(
-          //             context,
-          //             MaterialPageRoute(
-          //                 builder: (context) => MonthlyAveragesView()),
-          //           )
-          //         },
-          //     child: const Text("Monthly Average Ranking")),
-          const Expanded(
-            child: Text(
-              'Diary Enteries',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF800020),
+          title: Row(children: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+              },
             ),
-          ),
-          IconButton(
-              onPressed: () => newEntry(context),
-              icon: const Icon(Icons.add, color: Colors.white))
-        ]),
-      ),
-      body: DiaryLogList(),
-    );
+            IconButton(
+              onPressed: () => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => MonthlyInsightsView()),
+                )
+              },
+              icon: const Icon(Icons.insights),
+            ),
+            const Expanded(
+              child: Text(
+                'Diary Enteries',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            IconButton(
+                onPressed: () => newEntry(context),
+                icon: const Icon(Icons.add, color: Colors.white))
+          ]),
+        ),
+        body: DiaryLogList());
   }
 }
 
@@ -65,55 +78,58 @@ class DiaryLogList extends StatefulWidget {
 }
 
 class _DiaryLogListState extends State<DiaryLogList> {
-  final DiaryController controller = DiaryController();
+  final DiaryService service = DiaryService();
 
   Future<void> updateState() async {
     setState(() async {
-      var sortedEntries = await getSortedEntries();
+      // var sortedEntries = await getSortedEntries();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    var sortedEntries = getSortedEntries();
+    return StreamBuilder<List<DiaryEntry>>(
+        stream: service.getAllEntries(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const CircularProgressIndicator();
+          final sortedEntries = getSortedEntries(snapshot.data!);
+          return ListView.builder(
+            itemCount: sortedEntries.length,
+            itemBuilder: (context, index) {
+              final entry = sortedEntries[index];
 
-    return ListView.builder(
-      itemCount: sortedEntries.length,
-      itemBuilder: (context, index) {
-        final entry = sortedEntries[index];
-
-        if (index == 0 ||
-            entry.date.month != sortedEntries[index - 1].date.month ||
-            entry.date.year != sortedEntries[index - 1].date.year) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  DateFormat('MMMM, y').format(entry.date),
-                  style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF800020)),
-                ),
-              ),
-              DiaryLogEntry(updateParent: updateState, entry: entry),
-            ],
+              if (index == 0 ||
+                  entry.date.month != sortedEntries[index - 1].date.month ||
+                  entry.date.year != sortedEntries[index - 1].date.year) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Text(
+                        DateFormat('MMMM, y').format(entry.date),
+                        style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF800020)),
+                      ),
+                    ),
+                    DiaryLogEntry(updateParent: updateState, entry: entry),
+                  ],
+                );
+              } else {
+                return DiaryLogEntry(updateParent: updateState, entry: entry);
+              }
+            },
           );
-        } else {
-          return DiaryLogEntry(updateParent: updateState, entry: entry);
-        }
-      },
-    );
+        });
   }
 
-  Future<List<DiaryEntry>> getSortedEntries() async {
-    List<DiaryEntry> entries = await controller.getAllEntries();
-    entries.sort(
+  List<DiaryEntry> getSortedEntries(List<DiaryEntry> unsorted) {
+    unsorted.sort(
       (a, b) => b.date.compareTo(a.date),
     );
-    return entries;
+    return unsorted;
   }
 }
 
@@ -129,24 +145,60 @@ class DiaryLogEntry extends StatefulWidget {
 
 class _DiaryLogEntryState extends State<DiaryLogEntry> {
   late bool refresh;
-  final DiaryController controller = DiaryController();
+  final DiaryService service = DiaryService();
+
   Future<void> removeEntry(BuildContext context) async {
-    await controller.removeEntry(widget.entry.date.toString());
+    try {
+      await service.removeEntry(widget.entry.id!);
+      const snackBar = SnackBar(
+        backgroundColor: Colors.indigo, // Red color for errors
+        content: Text("Successfully Deleted"),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    } catch (e) {
+      final snackBar = SnackBar(
+        backgroundColor: Colors.redAccent, // Red color for errors
+        content: Text(e.toString()),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
     setState(() {
       refresh = !refresh;
     });
   }
 
   Future<void> EntryLog() async {
-    final result = await Navigator.push(
-        context, MaterialPageRoute(builder: (context) => DairyEntryView()));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => DairyEntryView()),
+    );
+    const snackBar = SnackBar(
+      backgroundColor: Colors.indigo,
+      content: Text("Successfully Created"),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: () {
-          print('Container tapped');
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => DairyEntryView(
+                      entry: widget.entry,
+                    )),
+          );
+          const snackBar = SnackBar(
+            backgroundColor: Colors.indigo,
+            content: Text("Successfully Updated"),
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(snackBar);
         },
         child: Container(
             margin: const EdgeInsets.all(16.0),

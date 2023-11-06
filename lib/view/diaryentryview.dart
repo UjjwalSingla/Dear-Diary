@@ -1,15 +1,13 @@
 import 'package:deardiary/controller/diary_entry_service.dart.dart';
 import 'package:deardiary/model/diary_entry_model.dart';
-import 'package:file/local.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf/widgets.dart' as pw;
 
 class DairyEntryView extends StatefulWidget {
-  final DiaryController controller = DiaryController();
-  DairyEntryView({super.key});
+  final DiaryEntry? entry;
+  final DiaryService service = DiaryService();
+  DairyEntryView({super.key, this.entry});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -18,42 +16,23 @@ class DairyEntryView extends StatefulWidget {
 
 class _DairyEntryViewState extends State<DairyEntryView> {
   final TextEditingController _textController = TextEditingController();
-  DateTime _selectedDate = DateTime.now();
-  double _userRating = 0.0;
-
-  Future<void> generateDiaryEntriesPDF(DiaryEntry entry) async {
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            children: [
-              pw.Text('Date: ${DateFormat('MMMM d, y').format(entry.date)}'),
-              pw.Text('Description: ${entry.description}'),
-              pw.Text('Rating: ${entry.rating} stars'),
-            ],
-          );
-        },
-      ),
-    );
-
-    final output = await getApplicationDocumentsDirectory();
-    print("output: $output");
-    const LocalFileSystem localFileSystem = LocalFileSystem();
-    final file = localFileSystem.file('$output/diary_entries.pdf');
-    await file.writeAsBytes(await pdf.save());
-  }
+  double userRating = 0.0;
+  DateTime selectedDate = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
+    String text = (widget.entry == null) ? 'Add a New Entry' : 'Update Entry';
+
+    _textController.text =
+        widget.entry == null ? _textController.text : widget.entry!.description;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF800020),
-        title: const Center(
+        title: Center(
           child: Text(
-            'Add DairyEntry',
+            text,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           ),
         ),
       ),
@@ -75,28 +54,34 @@ class _DairyEntryViewState extends State<DairyEntryView> {
                   half: const Icon(Icons.star_half, color: Color(0xFF800020)),
                   empty:
                       const Icon(Icons.star_border, color: Color(0xFF800020))),
-              initialRating: _userRating,
+              initialRating:
+                  widget.entry == null ? 0.0 : widget.entry!.rating.toDouble(),
               onRatingUpdate: (rating) {
                 setState(() {
-                  _userRating = rating;
+                  userRating = rating;
                 });
               },
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                Text('Date: ${DateFormat('MMMM d, y').format(_selectedDate)}'),
+                Text(
+                    'Date: ${DateFormat('MMMM d, y').format(widget.entry == null ? selectedDate : widget.entry!.date)}'),
                 IconButton(
                   onPressed: () async {
                     final pickedDate = await showDatePicker(
                       context: context,
-                      initialDate: _selectedDate,
+                      initialDate: widget.entry == null
+                          ? selectedDate
+                          : widget.entry!.date,
                       firstDate: DateTime(2015, 8),
                       lastDate: DateTime.now(),
                     );
-                    if (pickedDate != null && pickedDate != _selectedDate) {
+                    if (pickedDate != null && pickedDate != selectedDate) {
                       setState(() {
-                        _selectedDate = pickedDate;
+                        widget.entry == null
+                            ? selectedDate = pickedDate
+                            : widget.entry!.date = pickedDate;
                       });
                     }
                   },
@@ -112,19 +97,30 @@ class _DairyEntryViewState extends State<DairyEntryView> {
                       MaterialStateProperty.all(const Color(0xFF800020)),
                 ),
                 onPressed: () {
-                  DiaryEntry entry = DiaryEntry(
-                      date: _selectedDate,
-                      rating: _userRating.toInt(),
-                      description: _textController.text);
+                  try {
+                    DiaryEntry entry = DiaryEntry(
+                        id: widget.entry == null ? null : widget.entry!.id,
+                        date: widget.entry == null
+                            ? selectedDate
+                            : widget.entry!.date,
+                        rating: userRating != 0.0
+                            ? userRating.toInt()
+                            : widget.entry!.rating,
+                        description: _textController.text);
+                    widget.entry != null
+                        ? widget.service.updateDiaryEntry(entry)
+                        : widget.service.addEntry(entry);
+                    Navigator.of(context).pop(1);
+                  } catch (e) {
+                    final snackBar = SnackBar(
+                      backgroundColor: Colors.redAccent, // Red color for errors
+                      content: Text(e.toString()),
+                    );
 
-                  // if (widget.controller.checkEntry(entry)) {
-                  //   const snackBar = SnackBar(
-                  //     content: Text('An entry for this date already exists.'),
-                  //   );
-                  //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                  // } else {
-                  widget.controller.addEntry(entry);
-                  Navigator.of(context).pop(1);
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                    Navigator.of(context).pop(2);
+                  }
+
                   // }
                 },
                 child: const Text(
@@ -136,18 +132,35 @@ class _DairyEntryViewState extends State<DairyEntryView> {
                 ),
               ),
             ),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  DiaryEntry entry = DiaryEntry(
-                      date: _selectedDate,
-                      rating: _userRating.toInt(),
-                      description: _textController.text);
-                  generateDiaryEntriesPDF(entry);
-                },
-                child: const Text('Download'),
-              ),
-            )
+            if (widget.entry != null)
+              Center(
+                  child: ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all(Colors.white),
+                      ),
+                      onPressed: () async {
+                        try {
+                          await widget.service.removeEntry(widget.entry!.id!);
+                          Navigator.of(context).pop(1);
+                        } catch (e) {
+                          final snackBar = SnackBar(
+                            backgroundColor:
+                                Colors.redAccent, // Red color for errors
+                            content: Text(e.toString()),
+                          );
+
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                          Navigator.of(context).pop(2);
+                        }
+                      },
+                      child: const Text(
+                        "Delete",
+                        style: TextStyle(
+                          color: Color(0xFF800020),
+                          backgroundColor: Colors.white,
+                        ),
+                      )))
           ],
         ),
       ),

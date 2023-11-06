@@ -18,7 +18,7 @@ class LogInView extends StatelessWidget {
               ],
             );
           }
-          return const DiaryLogView();
+          return DiaryLogView();
         });
   }
 }

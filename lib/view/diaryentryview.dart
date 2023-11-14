@@ -3,6 +3,8 @@ import 'package:deardiary/model/diary_entry_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class DairyEntryView extends StatefulWidget {
   final DiaryEntry? entry;
@@ -18,6 +20,57 @@ class _DairyEntryViewState extends State<DairyEntryView> {
   final TextEditingController _textController = TextEditingController();
   double userRating = 0.0;
   DateTime selectedDate = DateTime.now();
+  final ImagePicker _picker = ImagePicker();
+  List<XFile>? _imageFiles = []; 
+  
+@override
+  void initState() {
+    super.initState();
+    if (widget.entry != null) {
+      _textController.text = widget.entry!.description;
+      userRating = widget.entry!.rating.toDouble();
+      selectedDate = widget.entry!.date;
+    }
+  }
+Future<void> _pickImages() async {
+    final List<XFile>? selectedImages = await _picker.pickMultiImage();
+    if (selectedImages != null) {
+      setState(() {
+        _imageFiles!.addAll(selectedImages);
+      });
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _imageFiles!.removeAt(index);
+    });
+  }
+     Widget _buildImageDisplay() {
+  return GridView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 3,
+      mainAxisSpacing: 4,
+      crossAxisSpacing: 4,
+    ),
+    itemCount: _imageFiles!.length,
+    itemBuilder: (context, index) {
+      return GridTile(
+        child: Image.file(
+          File(_imageFiles![index].path),
+          fit: BoxFit.cover, // Add this line to ensure each image covers its grid area
+          errorBuilder: (context, error, stackTrace) {
+            // Add error handling here
+            return Center(child: Icon(Icons.error)); // Fallback content inside the grid
+          },
+        ),
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +94,11 @@ class _DairyEntryViewState extends State<DairyEntryView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildImageDisplay(),
+            ElevatedButton(
+                onPressed: _pickImages,
+                child: const Text('Pick Images'),
+              ),
             TextField(
               controller: _textController,
               maxLength: 140,
